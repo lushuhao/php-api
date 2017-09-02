@@ -148,7 +148,22 @@ class ArtController extends Yaf_Controller_Abstract {
         return true;
     }
 
-    public function listAction() {
+    public function listDataAction() {
+        $pageNo = $this->getRequest()->getQuery( "pageNo", "0" );
+        $pageSize = $this->getRequest()->getQuery( "pageSize", "10" );
+        $cate = $this->getRequest()->getQuery( "cate", "0" );
+        $status = $this->getRequest()->getQuery( "status", "online" );
+
+        $model = new ArtModel();
+        if ( $data = $model->listData( $pageNo, $pageSize, $cate, $status ) ) {
+            echo json_encode( array(
+                "errno" => 0,
+                "errmsg" => "",
+                "data" => $data,
+            ) );
+        } else {
+            echo json_encode( array("errno" => $model->errno, "errmsg" => $model->errmsg) );
+        }
         return true;
     }
 

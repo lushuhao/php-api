@@ -114,22 +114,79 @@ class ArtModel {
         $ret = $query->fetchAll();
         if ( !$ret ) {
             $this->errno = -2010;
-            $this->errmsg="获取分类信息失败，ErrInfo:".end($query->errorInfo());
+            $this->errmsg = "获取分类信息失败，ErrInfo:".end( $query->errorInfo() );
             return false;
         }
         $artInfo['cateName'] = $ret[0]['name']; // 获取到分类信息添加到数组
 
         $data = array(
-            'id' => intval($artId),
-            'title'=>$artInfo['title'],
-            'contents'=>$artInfo['contents'],
-            'author'=>$artInfo['author'],
-            'cateName'=>$artInfo['cateName'],
-            'cateId'=>intval($artInfo['cate']),
-            'ctime'=>$artInfo['ctime'],
-            'mtime'=>$artInfo['mtime'],
-            'status'=>$artInfo['status'],
+            'id' => intval( $artId ),
+            'title' => $artInfo['title'],
+            'contents' => $artInfo['contents'],
+            'author' => $artInfo['author'],
+            'cateName' => $artInfo['cateName'],
+            'cateId' => intval( $artInfo['cate'] ),
+            'ctime' => $artInfo['ctime'],
+            'mtime' => $artInfo['mtime'],
+            'status' => $artInfo['status'],
         );
+        return $data;
+    }
+
+    public function listData( $pageNo = 0, $pageSize = 10, $cate = 0, $status = 'online' ) {
+        $start = $pageNo*$pageSize; // 数据库从0开始
+        if ( $cate == 0 ) { // 不传或者0，取所有分类
+            $filter = array($status, intval( $start ), intval( $pageSize ));
+            $query = $this->_db->prepare( "select * from `art` WHERE `status`=? ORDER BY `ctime` DESC limit ?,?" ); // desc 降序排列
+        } else {
+            $filter = array(intval( $cate ), $status, intval( $start ), intval( $pageSize ));
+            $query = $this->_db->prepare( "select * from `art` WHERE `cate`=? AND `status`=? ORDER BY `ctime` DESC limit ?,?" );
+        }
+        $stat = $query->execute( $filter );
+        $ret = $query->fetchAll();
+        if ( !$ret ) {
+            $this->errno = -2011;
+            $this->errmsg = "获取文章列表失败，ErrInfo".end( $query->errorInfo() );
+            return false;
+        }
+
+        $data = array();
+        $cateInfo = array(); // 存储分类name,不需要每一次都查数据库
+        foreach ( $ret as $item ) {
+            /**
+             * 获取分类信息
+             */
+            if ( isset( $cateInfo[$item['cate']] ) ) {
+                $cateName = $cateInfo[$item['cate']];
+            } else {
+                $query = $this->_db->prepare( "select `name` from `cate` WHERE `id`=?" );
+                $query->execute( array($item['cate']) );
+                $retCate = $query->fetchAll();
+                if ( !$retCate ) {
+                    $this->errno = -2010;
+                    $this->errmsg = "获取分类信息失败，ErrInfo:".end( $query->errorInfo() );
+                    return false;
+                }
+                $cateName = $cateInfo[$item['cate']] = $retCate[0]['name']; // 保存分类name到数组，方便下次判断
+            }
+
+            /**
+             * 正文太长则剪切
+             */
+            $contents = mb_strlen( $item['contents'] ) > 30 ? mb_substr( $item['contents'], 0, 30 )."..." : $item['contents'];
+
+            $data[] = array(
+                'id' => intval( $item['id'] ),
+                'title' => $item['title'],
+                'contents' => $contents,
+                'author' => $item['author'],
+                'cateName' => $cateName,
+                'cateId' => intval( $item['cate'] ),
+                'ctime' => $item['ctime'],
+                'mtime' => $item['mtime'],
+                'status' => $item['status'],
+            );
+        }
         return $data;
     }
 }
