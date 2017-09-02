@@ -71,14 +71,80 @@ class ArtController extends Yaf_Controller_Abstract {
     }
 
     public function delAction() {
+        if ( !$this->_isAdmin() ) {
+            echo json_encode( array("errno" => -2000, "errmsg" => "需要管理员权限才可以操作") );
+            return false;
+        }
+
+        $artId = $this->getRequest()->getQuery( "artId", "0" );
+        if ( is_numeric( $artId ) && $artId ) {
+            $model = new ArtModel();
+            if ( $model->del( $artId ) ) {
+                echo json_encode( array(
+                    "errno" => 0,
+                    "errmsg" => "",
+                ) );
+            } else {
+                echo json_encode( array(
+                    "errno" => $model->errno,
+                    "errmsg" => $model->errmsg,
+                ) );
+            }
+        } else {
+            echo json_encode( array("errno" => -2003, "errmsg" => "缺少必要的文章ID参数") );
+        }
         return true;
     }
 
     public function statusAction() {
+        if ( !$this->_isAdmin() ) {
+            echo json_encode( array("errno" => -2000, "errmsg" => "需要管理员权限才可以操作") );
+            return false;
+        }
+
+        $artId = $this->getRequest()->getQuery( "artId", "0" );
+        $status = $this->getRequest()->getQuery( "status", "offline" );
+
+        if ( is_numeric( $artId ) && $artId ) {
+            $model = new ArtModel();
+            if ( $model->status( $artId, $status ) ) {
+                echo json_encode( array(
+                    "errno" => 0,
+                    "errmsg" => "",
+                ) );
+            } else {
+                echo json_encode( array(
+                    "errno" => $model->errno,
+                    "errmsg" => $model->errmsg,
+                ) );
+            }
+        } else {
+            echo json_encode( array("errno" => -2003, "errmsg" => "缺少必要的文章ID和status参数") );
+        }
+        return true;
         return true;
     }
 
     public function getAction() {
+        $artId = $this->getRequest()->getQuery( "artId", "0" );
+        if ( is_numeric( $artId ) && $artId ) {
+            $model = new ArtModel();
+            if ( $data = $model->get( $artId ) ) {
+                echo json_encode( array(
+                    "errno" => 0,
+                    "errmsg" => "",
+                    "data" => $data,
+                ) );
+            } else {
+                echo json_encode( array(
+                    "errno" => $model->errno,
+                    "errmsg" => $model->errmsg,
+                    "data" => $data,
+                ) );
+            }
+        } else {
+            echo json_encode( array("errno" => -2003, "errmsg" => "缺少必要的文章ID参数") );
+        }
         return true;
     }
 

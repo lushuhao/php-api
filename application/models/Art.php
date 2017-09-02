@@ -73,4 +73,63 @@ class ArtModel {
             return intval( $artId );
         }
     }
+
+    public function del( $artId ) {
+        $query = $this->_db->prepare( "delete from `art` WHERE  `id`=? " );
+        $ret = $query->execute( array(intval( $artId )) );
+        if ( !$ret ) {
+            $this->errno = -2007;
+            $this->errmsg = "删除失败，ErrInfo:".end( $query->errorInfo() );
+            return false;
+        }
+        return true;
+    }
+
+    public function status( $artId, $status = 'offline' ) {
+        $query = $this->_db->prepare( "update `art` set `status`=? WHERE  `id`=? " );
+        $ret = $query->execute( array($status, intval( $artId )) );
+        if ( !$ret ) {
+            $this->errno = -2008;
+            $this->errmsg = "更新文章状态失败，ErrInfo:".end( $query->errorInfo() );
+            return false;
+        }
+        return true;
+    }
+
+    public function get( $artId ) {
+        $query = $this->_db->prepare( "select * from `art` WHERE  `id`=? " );
+        $status = $query->execute( array(intval( $artId )) );
+        $ret = $query->fetchAll();
+        if ( !$status || !$ret ) {
+            $this->errno = -2009;
+            $this->errmsg = "查询失败，ErrInfo:".end( $query->errorInfo() );
+            return false;
+        }
+        $artInfo = $ret[0];
+        /**
+         * 获取分类信息
+         */
+        $query = $this->_db->prepare( "select `name` from `cate` WHERE `id`=?" );
+        $query->execute( array($artInfo['cate']) );
+        $ret = $query->fetchAll();
+        if ( !$ret ) {
+            $this->errno = -2010;
+            $this->errmsg="获取分类信息失败，ErrInfo:".end($query->errorInfo());
+            return false;
+        }
+        $artInfo['cateName'] = $ret[0]['name']; // 获取到分类信息添加到数组
+
+        $data = array(
+            'id' => intval($artId),
+            'title'=>$artInfo['title'],
+            'contents'=>$artInfo['contents'],
+            'author'=>$artInfo['author'],
+            'cateName'=>$artInfo['cateName'],
+            'cateId'=>intval($artInfo['cate']),
+            'ctime'=>$artInfo['ctime'],
+            'mtime'=>$artInfo['mtime'],
+            'status'=>$artInfo['status'],
+        );
+        return $data;
+    }
 }
