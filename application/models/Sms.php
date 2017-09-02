@@ -16,7 +16,7 @@ class SmsModel {
         $this->_db = new PDO( "mysql:host=127.0.0.1;dbname=imooc;", "root", "342623" );
     }
 
-    public function send( $uid,$templateId ) {
+    public function send( $uid, $templateId ) {
         $query = $this->_db->prepare( "select `mobile` from `user` WHERE `id`=?" );
         $query->execute( array(intval( $uid )) );
         $ret = $query->fetchAll();
@@ -41,7 +41,20 @@ class SmsModel {
         $result = $sms->send( $userMobile, $contentParam, $templateId );
 
         // 100 发送成功
-        if ($result['stat']=='100'){
+        if ( $result['stat'] == '100' ) {
+            /**
+             * 记录短信发送状态
+             */
+            $query = $this->_db->prepare( "insert into `sms_record` (`uid`,`contents`,`template`) VALUES (?,?,?)" );
+            $ret = $query->execute( array($uid, json_encode( $contentParam ), $templateId) );
+            if ( !$ret ) {
+                /**
+                 * TODO 应该返回true还是false，有待商榷
+                 */
+                $this->errno = -4006;
+                $this->errmsg = '消息发送成功，但发送记录存库失败。';
+                return false;
+            }
             return true;
         } else {
             $this->errno = -4005;
