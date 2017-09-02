@@ -22,7 +22,7 @@ class ArtController extends Yaf_Controller_Abstract {
 
         $submit = $this->getRequest()->getQuery( "submit", '1' );// submit没有传，默认0，额外验证，防止程序登录
         if ( $submit != '1' ) {
-            echo json_encode( array('errno' => -1001, 'errmsg' => '请通过正确渠道提交') );
+            echo json_encode( array('errno' => -2001, 'errmsg' => '请通过正确渠道提交') );
             return false;
         }
 
