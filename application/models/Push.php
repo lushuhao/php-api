@@ -62,7 +62,33 @@ class PushModel {
     }
 
     public function toAll( $msg ) {
+        $igt = new IGeTui( HOST, APPKEY, MASTERSECRET );
 
+        $template = $this->_IGtTransmissionTemplateDemo( $msg );
+
+        $message = new IGtAppMessage(); // 初始化单个推送消息
+
+        $message->set_isOffline( true ); // 是否离线
+        // $message->set_offlineExpireTime( 3600*12*1000 ); // 离线时间（ms）
+        $message->set_data( $template ); // 设置推送消息类型
+
+        //接收方
+        $appIdList = array(APPID);
+        $phoneTypeList = array('ANDROID'); //推送范围安卓
+        //$provinceList=array('浙江','北京','上海');
+        //$age=array("0000","0010");
+
+        $cdt = new AppConditions();
+        $cdt->addCondition2(AppConditions::PHONE_TYPE, $phoneTypeList);
+        //$cdt->addCondition2(AppConditions::REGION,$provinceList);
+        //$cdt->addCondition2(AppConditions::TAG,$tagList);
+        //$cdt->addCondition2("age",$age);
+
+        $message->set_appIdList($appIdList);
+        $message->conditions = $cdt;
+
+        $igt->pushMessageToApp($message); // 给所有安装app推送
+        return true;
     }
 
     private function _IGtTransmissionTemplateDemo( $msg ) {
