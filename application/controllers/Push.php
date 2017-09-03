@@ -17,7 +17,7 @@ class PushController extends Yaf_Controller_Abstract {
 
         $cid = $this->getRequest()->getQuery("cid", "");
         $msg = $this->getRequest()->getQuery("msg", "");
-        if (!$cid || $msg){
+        if (!$cid || !$msg){
             echo json_encode(array("errno"=>-7002, "errmsg"=>"请输入推送用户的设备ID与要推送的内容"));
             return false;
         }
