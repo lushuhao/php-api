@@ -34,12 +34,12 @@ class UserController extends Yaf_Controller_Abstract {
         $uid = $model->login(trim($uname), trim($pwd));
         if ($uid){
             // 种Session
-            /*
+
             session_start(); // 初始化session数据，在客户端生成cookie，服务端生成存放session数据的临时文件
             $_SESSION['user_token'] = md5("salt".$_SERVER['REQUEST_TIME'].$uid); // 服务器端的cookie，运行期间可以使用
             $_SESSION['user_token_time'] = $_SERVER['REQUEST_TIME']; // 请求开始时的时间戳
             $_SESSION['user_id'] = $uid;
-            */
+
             echo json_encode(array(
                 'errno'=>0,
                 'errmsg'=>'',
