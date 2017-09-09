@@ -7,7 +7,13 @@
  * Time: 21:56
  */
 
-class WxpayModel {
+$wxpayLibPath = dirname( __FILE__ ).'/../library/ThirdParty/Wxpay/';
+include_once( $wxpayLibPath.'WxPay.Api.php' );
+include_once( $wxpayLibPath.'WxPay.Notify.php' );
+include_once( $wxpayLibPath.'WxPay.NativePay.php' );
+include_once( $wxpayLibPath.'WxPay.Data.php' );
+
+class WxpayModel extends WxPayNotify {
     public $errno = 0;
     public $errmsg = "";
     private $_db;
@@ -20,7 +26,7 @@ class WxpayModel {
         $query = $this->_db->prepare( "select * from `item` WHERE  `id`=? " );
         $query->execute( array($itemId) );
         $ret = $query->fetchAll();
-        if ( !ret || count( $ret ) != 1 ) {
+        if ( !$ret || count( $ret ) != 1 ) {
             $this->errno = -6003;
             $this->errmsg = "找不到这件商品";
             return false;
@@ -57,5 +63,70 @@ class WxpayModel {
             $this->errmsg = "更新库存失败";
             return false;
         }
-        return $lastId;    }
+        return $lastId;
+    }
+
+    public function qrcode( $billId ) {
+        $query = $this->_db->prepare( "select * from `bill` WHERE  `id`=? " );
+        $query->execute( array($billId) );
+        $ret = $query->fetchAll();
+        if ( !$ret || count( $ret ) != 1 ) {
+            $this->errno = -6009;
+            $this->errmsg = "找不到账单信息";
+            return false;
+        }
+
+        $bill = $ret[0];
+
+        $query = $this->_db->prepare( "select * from `item` WHERE  `id`=? " );
+        $query->execute( array($bill['itemid']) );
+        $ret = $query->fetchAll();
+        if ( !$ret || count( $ret ) != 1 ) {
+            $this->errno = -6010;
+            $this->errmsg = "找不到商品信息";
+            return false;
+        }
+
+        $item = $ret[0];
+
+        $input = new WxPayUnifiedOrder();
+        $input->SetBody( $item['name'] );
+        $input->SetAttach( $billId );  // 订单id，支付通知原路返回
+        $input->SetOut_trade_no( WxPayConfig::MCHID.date( "YmdHis" ) );  // 设置商户内部订单号，MCHID商户号加当前时间
+        $input->SetTotal_fee( $bill['price'] ); //订单金额
+        $input->SetTime_start( date( 'YmdHis' ) ); //开始时间
+        $input->SetTime_expire( date( "YmdHis", time() + 86400*3 ) ); //过期时间
+        $input->SetGoods_tag( $item['name'] ); // 商品标记
+        $input->SetNotify_url( "http://api.lushuhao.club/wxpay/callback" ); //异步通知回调地址
+        $input->SetTrade_type( "NATIVE" ); //JSAPI--公众号支付、NATIVE--原生扫码支付、APP--app支付
+        $input->SetProduct_id( $billId ); //生成二维码包含的商品id
+
+        $notify = new NativePay();
+        $result = $notify->GetPayUrl( $input ); //生成code url
+        $url = $result["code_url"];
+        return $url;
+    }
+
+    public function callback() {
+        /**
+         * 订单成功，更新账单
+         * TODO 因为SK没有，没法与微信支付的服务器做Response确认，只能单方面记账,微信尝试发起三次回调,最多5次
+         */
+        $xmlData = file_get_contents( "php://input" ); // 标准输入流,微信返回一个xml
+        if ( substr_count( $xmlData, "<result_code><![CDATA[SUCCESS]]></result_code>" ) == 1 && substr_count( $xmlData, "<return_code><![CDATA[SUCCESS]]></return_code>" ) == 1 ) {  //支付成功
+            preg_match( '/<attach>(.*)\[(\d+)\](.*)<\/attach>/i', $xmlData, $match ); // 传递给微信attach是订单id
+            if ( isset( $match[2] ) && is_numeric( $match[2] ) ) {
+                $billId = intval( $match[2] ); // 返回第2个捕获的子组
+            }
+            preg_match( '/<transaction_id>(.*)\[(\d+)\](.*)<\/transaction_id>/i', $xmlData, $match );
+            error_log('match2----'.$match[2]);
+            if ( isset( $match[2] ) && is_numeric( $match[2] ) ) {
+                $transactionId = intval( $match[2] ); // 返回第2个捕获的子组
+            }
+        }
+        if ( isset( $billId ) && isset( $transactionId ) ) {
+            $query = $this->_db->prepare( "update `bill` set `transaction`=?, `ptime`=?, `status`='paid' where `id`=?" );
+            $query->execute(array($transactionId,date("Y-m-d H:i:s"), $billId));
+        }
+    }
 }
