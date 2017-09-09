@@ -89,7 +89,7 @@ class WxpayModel extends WxPayNotify {
 
         $item = $ret[0];
 
-        $input = new WxPayUnifiedOrder();
+        $input = new WxPayUnifiedOrder(); // 商户id等在config中设置
         $input->SetBody( $item['name'] );
         $input->SetAttach( $billId );  // 订单id，支付通知原路返回
         $input->SetOut_trade_no( WxPayConfig::MCHID.date( "YmdHis" ) );  // 设置商户内部订单号，MCHID商户号加当前时间
