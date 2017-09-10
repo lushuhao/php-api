@@ -45,7 +45,7 @@ class UserController extends Yaf_Controller_Abstract {
 
             echo Common_Request::response( 0, '', array('name' => $uname) );
         } else {
-            echo Common_Request::response( $model->errno, $model->errno );
+            echo Common_Request::response( $model->errno, $model->errmsg );
         }
         return true;
     }
