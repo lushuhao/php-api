@@ -26,7 +26,7 @@ class UserModel {
             return false;
         }
         $userInfo = $ret[0];
-        if ($this->_password_generate($pwd) != $userInfo['pwd']){ // 校验密码
+        if (Common_Password::pwdEncode($pwd) != $userInfo['pwd']){ // 校验密码
             $this->errno = -1004;
             $this->errmsg = '密码错误';
             return false;
@@ -49,7 +49,7 @@ class UserModel {
             $this->errmsg = '密码太短，请设置至少8位的密码';
             return false;
         } else {
-            $password = $this->_password_generate($pwd); // 生成32位的MD5加密字符串
+            $password = Common_Password::pwdEncode($pwd); // 生成32位的MD5加密字符串
         }
         $query = $this->_db->prepare('insert into `user` (`name`, `pwd`,`reg_time`) VALUES (?, ?, ?)');
         $ret = $query->execute(array($uname, $password, date('Y-m-d H:i:s')));
@@ -60,11 +60,5 @@ class UserModel {
         }
 
         return true;
-    }
-
-    // MD5加密
-    private function _password_generate($password){
-        $pwd = md5('salt-lsh'.$password);
-        return $pwd;
     }
 }
