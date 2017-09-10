@@ -122,7 +122,6 @@ class ArtController extends Yaf_Controller_Abstract {
             echo json_encode( array("errno" => -2003, "errmsg" => "缺少必要的文章ID和status参数") );
         }
         return true;
-        return true;
     }
 
     public function getAction() {
