@@ -25,8 +25,7 @@ class UserModel {
             return false;
         }
         if ( Common_Password::pwdEncode( $pwd ) != $userInfo['pwd'] ) { // 校验密码
-            $this->errno = -1004;
-            $this->errmsg = '密码错误';
+            list( $this->errno, $this->errmsg ) = Err_Map::get( 1004 );
             return false;
         }
         return intval( $userInfo[1] ); // 返回int类型
@@ -40,13 +39,12 @@ class UserModel {
         }
 
         if ( strlen( $pwd ) < 8 ) {
-            $this->errno = -1006;
-            $this->errmsg = '密码太短，请设置至少8位的密码';
+            list( $this->errno, $this->errmsg ) = Err_Map::get( 1006 );
             return false;
         } else {
             $password = Common_Password::pwdEncode( $pwd ); // 生成32位的MD5加密字符串
         }
-        print_r($uname, $password);
+        print_r( $uname, $password );
         if ( !$this->_dao->addUser( $uname, $password, date( 'Y-m-d H:i:s' ) ) ) {
             $this->errno = $this->_dao->errno();
             $this->errmsg = $this->_dao->errmsg();
