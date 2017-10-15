@@ -10,7 +10,7 @@
 class PushController extends Yaf_Controller_Abstract {
 
     public function singleAction() {
-        if ( !$this->_isAdmin() ) {
+        if ( !Admin_Object::isAdmin() ) {
             echo json_encode( array("errno" => -7001, "errmsg" => "需要管理员权限才可以操作") );
             return false;
         }
@@ -39,7 +39,7 @@ class PushController extends Yaf_Controller_Abstract {
     }
 
     public function toallAction() {
-        if ( !$this->_isAdmin() ) {
+        if ( !Admin_Object::isAdmin() ) {
             echo json_encode( array("errno" => -7001, "errmsg" => "需要管理员权限才可以操作") );
             return false;
         }
@@ -63,10 +63,6 @@ class PushController extends Yaf_Controller_Abstract {
                 "errmsg" => $model->errmsg,
             ) );
         }
-        return true;
-    }
-
-    private function _isAdmin() {
         return true;
     }
 }
