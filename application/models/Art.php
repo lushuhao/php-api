@@ -7,6 +7,8 @@
  * Time: 21:19
  */
 
+include_once( dirname( __FILE__ ).'/../../vendor/autoload.php' ); // 自动加载redis
+
 class ArtModel {
     public $errno = 0;
     public $errmsg = "";
@@ -37,14 +39,22 @@ class ArtModel {
              * 检查Cate是否存在
              * 如果是编辑文章，cate之前创建过，不需要再做检验
              */
-            $query = $this->_db->prepare( "select count(*) from `cate` WHERE `id` = ? " );
-            $query->execute( array($cate) );
-            $ret = $query->fetchAll();
-            if ( !$ret || $ret[0][0] == 0 ) {
-                $this->errno = -2005;
-                $this->errmsg = "找不到对应ID的分类信息， cate id:".$cate.", 请先创建该分类。";
-                return false;
+            $redis = new Predis\Client(); // redis客户端
+            $redisKey = 'cateExists-'.$cate;
+            $redisValue = 1;
+            if ( !$redis->get( $redisKey ) ) { // 取不到key，查询数据库
+                $query = $this->_db->prepare( "select count(*) from `cate` WHERE `id` = ? " );
+                $query->execute( array($cate) );
+                $ret = $query->fetchAll();
+                if ( !$ret || $ret[0][0] == 0 ) {
+                    $this->errno = -2005;
+                    $this->errmsg = "找不到对应ID的分类信息， cate id:".$cate.", 请先创建该分类。";
+                    return false;
+                } else {
+                    $redis->set( $redisKey, $redisValue ); // 在数据库中找到，放到redis里
+                }
             }
+
         }
 
         /**
